@@ -28,7 +28,10 @@ export async function translateBatch(
         content[`str_${index}`] = text;
     });
 
-    const lingoDotDev = new LingoDotDevEngine({ apiKey });
+    const lingoDotDev = new LingoDotDevEngine({
+        apiKey,
+        apiUrl: "https://api.lingo.dev"
+    });
 
     try {
         const translatedContent = await lingoDotDev.localizeObject(content, {
