@@ -54,9 +54,13 @@ export async function translateBatch(
 
             window.addEventListener("message", handleMessage);
 
-            let bodyContent = init?.body;
-            if (init?.body instanceof Uint8Array || init?.body instanceof ArrayBuffer) {
-                bodyContent = new TextDecoder().decode(init.body);
+            let bodyContent: Uint8Array | undefined = undefined;
+            if (typeof init?.body === "string") {
+                bodyContent = new TextEncoder().encode(init.body);
+            } else if (init?.body instanceof Uint8Array) {
+                bodyContent = init.body;
+            } else if (init?.body instanceof ArrayBuffer) {
+                bodyContent = new Uint8Array(init.body);
             }
 
             parent.postMessage({

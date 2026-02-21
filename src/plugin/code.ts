@@ -290,7 +290,7 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
             const fetchOptions: FetchOptions = {
                 method: init?.method || "GET",
                 headers: init?.headers || {},
-                body: typeof init?.body === "string" ? new Uint8Array(new (globalThis as any).TextEncoder().encode(init.body)) : undefined,
+                body: init?.body,
             };
 
             const resp = await fetch(url, fetchOptions);
