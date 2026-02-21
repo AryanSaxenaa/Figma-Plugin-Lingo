@@ -71,16 +71,27 @@ function resetHighlights(): void {
             node.getPluginData("lingoAuditHighlighted") === "true"
         ) {
             const strokeable = node as GeometryMixin & BaseNode & SceneNode;
-            const raw = node.getPluginData("originalStrokes");
+            const rawStrokes = node.getPluginData("originalStrokes");
+            const rawWeight = node.getPluginData("originalStrokeWeight");
+            const rawAlign = node.getPluginData("originalStrokeAlign");
 
             try {
-                strokeable.strokes = raw ? JSON.parse(raw) : [];
+                strokeable.strokes = rawStrokes ? JSON.parse(rawStrokes) : [];
             } catch {
                 strokeable.strokes = [];
             }
 
+            if (rawWeight) {
+                (strokeable as unknown as IndividualStrokesMixin & { strokeWeight: number }).strokeWeight = parseFloat(rawWeight);
+            }
+            if (rawAlign) {
+                (strokeable as unknown as IndividualStrokesMixin & { strokeAlign: string }).strokeAlign = rawAlign;
+            }
+
             node.setPluginData("lingoAuditHighlighted", "");
             node.setPluginData("originalStrokes", "");
+            node.setPluginData("originalStrokeWeight", "");
+            node.setPluginData("originalStrokeAlign", "");
         }
 
         if ("children" in node) {
@@ -124,6 +135,14 @@ figma.ui.onmessage = (msg: { type: string;[key: string]: unknown }) => {
                 "originalStrokes",
                 JSON.stringify(strokeable.strokes)
             );
+
+            const extendedStrokeable = strokeable as unknown as IndividualStrokesMixin & {
+                strokeWeight: number;
+                strokeAlign: string;
+            };
+
+            node.setPluginData("originalStrokeWeight", extendedStrokeable.strokeWeight?.toString() ?? "");
+            node.setPluginData("originalStrokeAlign", extendedStrokeable.strokeAlign ?? "");
             node.setPluginData("lingoAuditHighlighted", "true");
 
             strokeable.strokes = [
