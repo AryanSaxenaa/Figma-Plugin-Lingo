@@ -281,5 +281,34 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
 
     if (msg.type === "CANCEL") {
         figma.closePlugin();
+        return;
+    }
+
+    if (msg.type === "PLUGIN_FETCH") {
+        const { id, url, init } = msg as any;
+        try {
+            const fetchOptions: FetchOptions = {
+                method: init?.method || "GET",
+                headers: init?.headers || {},
+                body: typeof init?.body === "string" ? new Uint8Array(new (globalThis as any).TextEncoder().encode(init.body)) : undefined,
+            };
+
+            const resp = await fetch(url, fetchOptions);
+            const text = await resp.text();
+
+            figma.ui.postMessage({
+                type: "PLUGIN_FETCH_RESPONSE",
+                id,
+                status: resp.status,
+                text,
+            });
+        } catch (e: any) {
+            figma.ui.postMessage({
+                type: "PLUGIN_FETCH_ERROR",
+                id,
+                error: typeof e === "string" ? e : (e.message || String(e)),
+            });
+        }
+        return;
     }
 };
