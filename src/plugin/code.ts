@@ -148,7 +148,25 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
                 let isOverflow = false;
 
                 if (item.textAutoResize === "WIDTH_AND_HEIGHT") {
-                    isOverflow = false;
+                    clone.textAutoResize = "WIDTH_AND_HEIGHT";
+                    let parentLimit = Infinity;
+
+                    if (node.parent && "width" in node.parent) {
+                        const parent = node.parent as any;
+                        let paddingX = 0;
+                        if (typeof parent.paddingLeft === "number") paddingX += parent.paddingLeft;
+                        if (typeof parent.paddingRight === "number") paddingX += parent.paddingRight;
+
+                        parentLimit = parent.width - paddingX;
+                    }
+
+                    if (parentLimit !== Infinity && clone.width > parentLimit) {
+                        overflowAmount = clone.width - parentLimit;
+                        overflowPercent = (overflowAmount / Math.max(parentLimit, 1)) * 100;
+                        isOverflow = overflowAmount > 4;
+                    } else {
+                        isOverflow = false;
+                    }
                 } else if (item.textAutoResize === "HEIGHT") {
                     clone.textAutoResize = "HEIGHT";
                     // For height-auto, check if vertical growth exceeds original box
