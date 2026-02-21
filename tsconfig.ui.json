@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "lib": [
+            "ES6",
+            "DOM"
+        ],
+        "jsx": "react",
+        "strict": true,
+        "moduleResolution": "node",
+        "typeRoots": [
+            "./node_modules/@types"
+        ],
+        "types": [
+            "react",
+            "react-dom"
+        ],
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
+    },
+    "include": [
+        "src/ui/**/*.ts",
+        "src/ui/**/*.tsx"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "src/plugin"
+    ]
+}

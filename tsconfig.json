@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "lib": [
+            "ES6",
+            "DOM"
+        ],
+        "jsx": "react",
+        "strict": true,
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
+    },
+    "files": [],
+    "references": [
+        {
+            "path": "./tsconfig.plugin.json"
+        },
+        {
+            "path": "./tsconfig.ui.json"
+        }
+    ]
+}
