@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import ReactDOM from "react-dom/client";
 import "./styles.css";
 import { translateBatch, RTL_LOCALES, SUPPORTED_LOCALES } from "./lingoClient";
-import { estimateOverflow, getOverflowSeverity } from "./overflowDetector";
+import { getOverflowSeverity } from "./overflowDetector";
 
 // ---------------------------------------------------------------------------
 // Shared types (intentionally NOT imported from Figma typings)
@@ -44,6 +44,39 @@ type SeverityFilter = "all" | "warning" | "critical";
 
 function sendToPlugin(message: Record<string, unknown>): void {
     parent.postMessage({ pluginMessage: message }, "*");
+}
+
+function measureInFigma(
+    locale: string,
+    nodes: TextNodeInfo[],
+    translations: string[]
+): Promise<Array<{ isOverflow: boolean; overflowAmount: number; overflowPercent: number }>> {
+    return new Promise((resolve) => {
+        const handler = (event: MessageEvent) => {
+            const msg = event.data?.pluginMessage;
+            if (msg && msg.type === "MEASURE_RESULT" && msg.locale === locale) {
+                window.removeEventListener("message", handler);
+                resolve(msg.results);
+            }
+        };
+        window.addEventListener("message", handler);
+        parent.postMessage(
+            {
+                pluginMessage: {
+                    type: "MEASURE_NODES",
+                    locale,
+                    payload: nodes.map((n, i) => ({
+                        id: n.id,
+                        translatedText: translations[i],
+                        width: n.width,
+                        height: n.height,
+                        textAutoResize: n.textAutoResize,
+                    })),
+                },
+            },
+            "*"
+        );
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -142,20 +175,16 @@ function App(): React.ReactElement {
                 return;
             }
 
+            const measurements = await measureInFigma(locale, nodes, translations);
             const isRTL = RTL_LOCALES.has(locale);
 
             nodes.forEach((node, index) => {
                 const translatedText = translations[index] ?? node.originalText;
-
-                const overflow = estimateOverflow(
-                    node.originalText,
-                    translatedText,
-                    node.width,
-                    node.height,
-                    node.fontSize,
-                    locale,
-                    node.textAutoResize
-                );
+                const overflow = measurements[index] ?? {
+                    isOverflow: false,
+                    overflowAmount: 0,
+                    overflowPercent: 0,
+                };
 
                 const severity = getOverflowSeverity(overflow.overflowPercent);
 

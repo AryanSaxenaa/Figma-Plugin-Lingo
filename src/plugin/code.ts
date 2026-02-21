@@ -108,9 +108,71 @@ function resetHighlights(): void {
     }
 }
 
-figma.ui.onmessage = (msg: { type: string;[key: string]: unknown }) => {
+figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
     if (msg.type === "SAVE_API_KEY") {
         figma.clientStorage.setAsync("apiKey", msg.apiKey as string);
+        return;
+    }
+
+    if (msg.type === "MEASURE_NODES") {
+        const locale = msg.locale as string;
+        const payload = msg.payload as any[];
+        const results = [];
+
+        for (const item of payload) {
+            const node = figma.getNodeById(item.id) as TextNode;
+            if (!node || node.type !== "TEXT") {
+                results.push({ isOverflow: false, overflowAmount: 0, overflowPercent: 0 });
+                continue;
+            }
+
+            const clone = node.clone();
+            clone.visible = false; // Hide clone to prevent flashing
+
+            try {
+                // Ensure we have a font loaded before changing characters
+                let fontToLoad = clone.fontName;
+                if (fontToLoad === figma.mixed) {
+                    fontToLoad = { family: "Inter", style: "Regular" };
+                }
+
+                await figma.loadFontAsync(fontToLoad as FontName);
+                if (clone.fontName === figma.mixed) {
+                    clone.fontName = fontToLoad;
+                }
+
+                clone.characters = item.translatedText;
+
+                let overflowAmount = 0;
+                let overflowPercent = 0;
+                let isOverflow = false;
+
+                if (item.textAutoResize === "WIDTH_AND_HEIGHT") {
+                    isOverflow = false;
+                } else if (item.textAutoResize === "HEIGHT") {
+                    clone.textAutoResize = "HEIGHT";
+                    // For height-auto, check if vertical growth exceeds original box
+                    overflowAmount = clone.height - item.height;
+                    overflowPercent = (overflowAmount / Math.max(item.height, 1)) * 100;
+                    isOverflow = overflowAmount > 4;
+                } else {
+                    clone.textAutoResize = "WIDTH_AND_HEIGHT";
+                    // For fixed/truncated boxes, check if natural text width exceeds box width
+                    overflowAmount = clone.width - item.width;
+                    overflowPercent = (overflowAmount / Math.max(item.width, 1)) * 100;
+                    isOverflow = overflowAmount > 4;
+                }
+
+                results.push({ isOverflow, overflowAmount, overflowPercent });
+            } catch (e) {
+                // Fallback to "safe" if font missing
+                results.push({ isOverflow: false, overflowAmount: 0, overflowPercent: 0 });
+            } finally {
+                clone.remove();
+            }
+        }
+
+        figma.ui.postMessage({ type: "MEASURE_RESULT", locale, results });
         return;
     }
 
