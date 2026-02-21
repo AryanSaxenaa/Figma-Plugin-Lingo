@@ -1,13 +1,51 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const InlineSourceWebpackPlugin = require("inline-source-webpack-plugin");
+const fs = require("fs");
+
+/**
+ * A minimal webpack plugin that post-processes the HtmlWebpackPlugin output.
+ * It reads the emitted JS bundle, removes the <script src> tag, and embeds
+ * the JS content directly inside a <script> tag in the HTML.
+ *
+ * Figma requires the plugin UI to be a single self-contained file —
+ * it loads ui.html from disk and cannot resolve relative file references.
+ */
+class FigmaInlinePlugin {
+    apply(compiler) {
+        compiler.hooks.compilation.tap("FigmaInlinePlugin", (compilation) => {
+            HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync(
+                "FigmaInlinePlugin",
+                (data, cb) => {
+                    let html = data.html;
+
+                    // Find all <script src="..."> tags and replace them with inline scripts.
+                    html = html.replace(
+                        /<script(?:[^>]*?) src="([^"]+)"(?:[^>]*)><\/script>/gi,
+                        (match, src) => {
+                            const assetName = src.replace(/^\//, "");
+                            const asset = compilation.assets[assetName];
+                            if (asset) {
+                                const code = asset.source();
+                                return `<script>${code}</script>`;
+                            }
+                            return match;
+                        }
+                    );
+
+                    data.html = html;
+                    cb(null, data);
+                }
+            );
+        });
+    }
+}
 
 module.exports = (env, argv) => {
     const isDev = argv.mode === "development";
 
     return [
         // Plugin sandbox entry — outputs dist/code.js
-        // Uses tsconfig.plugin.json which includes @figma/plugin-typings and no DOM lib.
+        // Uses tsconfig.plugin.json: includes @figma/plugin-typings, no DOM lib.
         {
             name: "plugin",
             target: "web",
@@ -39,9 +77,8 @@ module.exports = (env, argv) => {
             devtool: isDev ? "inline-source-map" : false,
         },
 
-        // UI entry — outputs a single self-contained dist/ui.html with all JS and CSS inlined.
-        // Uses tsconfig.ui.json which has DOM lib and JSX, but NO @figma/plugin-typings.
-        // Figma loads plugin UIs from disk and cannot resolve external file references.
+        // UI entry — outputs a single self-contained dist/ui.html with all JS inlined.
+        // Uses tsconfig.ui.json: DOM lib + JSX, no @figma/plugin-typings.
         {
             name: "ui",
             target: "web",
@@ -52,6 +89,7 @@ module.exports = (env, argv) => {
                 filename: "[name].js",
                 path: path.resolve(__dirname, "dist"),
                 clean: false,
+                publicPath: "",
             },
             resolve: {
                 extensions: [".tsx", ".ts", ".js"],
@@ -83,12 +121,7 @@ module.exports = (env, argv) => {
                     inject: "body",
                     scriptLoading: "blocking",
                 }),
-                // Inlines all <script src> and <link> tags into the HTML.
-                new InlineSourceWebpackPlugin({
-                    compress: false,
-                    rootpath: path.resolve(__dirname, "dist"),
-                    noAssetMatch: "warn",
-                }),
+                new FigmaInlinePlugin(),
             ],
         },
     ];

@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "ES6",
         "lib": [
-            "ES6"
+            "ES2016"
         ],
         "strict": true,
         "moduleResolution": "node",
@@ -10,8 +10,7 @@
             "@figma/plugin-typings"
         ],
         "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "noEmit": true
+        "allowSyntheticDefaultImports": true
     },
     "include": [
         "src/plugin/**/*.ts"
