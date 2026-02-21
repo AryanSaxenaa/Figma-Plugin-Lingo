@@ -34,6 +34,12 @@ figma.showUI(__html__, {
     title: "LingoAudit \u2014 i18n Design Auditor",
 });
 
+figma.clientStorage.getAsync("apiKey").then((apiKey) => {
+    if (apiKey) {
+        figma.ui.postMessage({ type: "API_KEY_LOADED", apiKey });
+    }
+});
+
 // Recursively collect all TEXT nodes from the given node tree.
 function walk(node: SceneNode, collector: TextNodeInfo[]): void {
     if (node.type === "TEXT") {
@@ -101,6 +107,11 @@ function resetHighlights(): void {
 }
 
 figma.ui.onmessage = (msg: { type: string;[key: string]: unknown }) => {
+    if (msg.type === "SAVE_API_KEY") {
+        figma.clientStorage.setAsync("apiKey", msg.apiKey as string);
+        return;
+    }
+
     if (msg.type === "SCAN_FRAME") {
         const roots: readonly SceneNode[] =
             figma.currentPage.selection.length > 0

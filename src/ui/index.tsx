@@ -75,6 +75,10 @@ function App(): React.ReactElement {
             if (msg.type === "SCAN_RESULT") {
                 runAudit(msg.nodes as TextNodeInfo[]);
             }
+
+            if (msg.type === "API_KEY_LOADED" && msg.apiKey) {
+                setApiKey(msg.apiKey as string);
+            }
         };
 
         return () => {
@@ -99,6 +103,7 @@ function App(): React.ReactElement {
 
         setError(null);
         setStep("scanning");
+        sendToPlugin({ type: "SAVE_API_KEY", apiKey: apiKey.trim() });
         sendToPlugin({ type: "SCAN_FRAME" });
     }
 
