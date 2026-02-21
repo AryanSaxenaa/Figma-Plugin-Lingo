@@ -93,6 +93,27 @@ module.exports = (env, argv) => {
             },
             resolve: {
                 extensions: [".tsx", ".ts", ".js"],
+                fallback: {
+                    "util": false,
+                    "fs": false,
+                    "path": false,
+                    "os": false,
+                    "vm": false,
+                    "stream": false,
+                    "constants": false,
+                    "crypto": false,
+                    "http": false,
+                    "https": false,
+                    "zlib": false,
+                    "tls": false,
+                    "net": false,
+                    "child_process": false,
+                    "url": false,
+                    "buffer": false,
+                    "string_decoder": false,
+                    "events": false,
+                    "assert": false
+                }
             },
             module: {
                 rules: [

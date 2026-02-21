@@ -7,8 +7,13 @@
         "dev": "webpack --mode development --watch"
     },
     "dependencies": {
+        "buffer": "^6.0.3",
+        "events": "^3.3.0",
+        "lingo.dev": "^0.131.7",
         "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react-dom": "^18.2.0",
+        "string_decoder": "^1.3.0",
+        "url": "^0.11.4"
     },
     "devDependencies": {
         "@figma/plugin-typings": "^1.90.0",

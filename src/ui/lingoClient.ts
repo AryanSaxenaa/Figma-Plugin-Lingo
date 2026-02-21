@@ -1,4 +1,6 @@
-// Lingo.dev API wrapper. Lives in the UI iframe — fetch is available here.
+import { LingoDotDevEngine } from "lingo.dev/sdk";
+
+// Lingo.dev API wrapper. Lives in the UI iframe.
 
 export const RTL_LOCALES = new Set(["ar", "he", "fa", "ur", "yi"]);
 
@@ -26,30 +28,19 @@ export async function translateBatch(
         content[`str_${index}`] = text;
     });
 
-    const response = await fetch("https://api.lingo.dev/v1/translate", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-            content,
+    const lingoDotDev = new LingoDotDevEngine({ apiKey });
+
+    try {
+        const translatedContent = await lingoDotDev.localizeObject(content, {
             sourceLocale: source,
             targetLocale: target,
-        }),
-    });
+        });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-            `Lingo.dev API error ${response.status}: ${errorText}`
-        );
+        return texts.map((_, index) => {
+            const key = `str_${index}`;
+            return (translatedContent as Record<string, string>)[key] ?? texts[index];
+        });
+    } catch (err: any) {
+        throw new Error(`Lingo.dev SDK error: ${err.message || err}`);
     }
-
-    const data = (await response.json()) as { content: Record<string, string> };
-
-    return texts.map((_, index) => {
-        const key = `str_${index}`;
-        return data.content[key] ?? texts[index];
-    });
 }
