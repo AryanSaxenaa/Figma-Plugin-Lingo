@@ -23,9 +23,10 @@ export function estimateOverflow(
     originalText: string,
     translatedText: string,
     nodeWidth: number,
-    _nodeHeight: number,
+    nodeHeight: number,
     fontSize: number,
-    locale: string
+    locale: string,
+    textAutoResize: "NONE" | "WIDTH_AND_HEIGHT" | "HEIGHT" | "TRUNCATE" = "NONE"
 ): {
     isOverflow: boolean;
     estimatedNewWidth: number;
@@ -33,6 +34,16 @@ export function estimateOverflow(
     overflowAmount: number;
     overflowPercent: number;
 } {
+    if (textAutoResize === "WIDTH_AND_HEIGHT") {
+        return {
+            isOverflow: false,
+            estimatedNewWidth: nodeWidth,
+            originalWidth: nodeWidth,
+            overflowAmount: 0,
+            overflowPercent: 0,
+        };
+    }
+
     const isCJK = CJK_LOCALES.has(locale);
     const charWidth = isCJK ? fontSize * 0.95 : fontSize * 0.6;
 
@@ -41,6 +52,33 @@ export function estimateOverflow(
     const originalEstimatedWidth = originalText.length * charWidth;
     const translatedEstimatedWidth = translatedText.length * charWidth * multiplier;
 
+    if (textAutoResize === "HEIGHT") {
+        // If HEIGHT: width is fixed, text wraps.
+        // We approximate wrapping by mapping text length to lines required.
+        const originalLinesNumber = Math.max(1, Math.ceil(originalEstimatedWidth / Math.max(nodeWidth, 1)));
+        const translatedLinesNumber = Math.max(1, Math.ceil(translatedEstimatedWidth / Math.max(nodeWidth, 1)));
+
+        // Approximate single line height (roughly fontSize * line-height ratio, assuming 1.25)
+        const lineHeight = fontSize * 1.25;
+
+        // Original node height bounds the content
+        const scaleFactorHeight = nodeHeight / Math.max(originalLinesNumber * lineHeight, 1);
+        const estimatedNewHeight = translatedLinesNumber * lineHeight * scaleFactorHeight;
+
+        const overflowAmount = estimatedNewHeight - nodeHeight;
+        const overflowPercent = (overflowAmount / nodeHeight) * 100;
+        const isOverflow = overflowAmount > 4;
+
+        return {
+            isOverflow,
+            estimatedNewWidth: nodeWidth,
+            originalWidth: nodeWidth,
+            overflowAmount,
+            overflowPercent,
+        };
+    }
+
+    // Default NONE/TRUNCATE horizontal overflow
     // Scale both estimates relative to the actual available node width.
     const scaleFactor = nodeWidth / Math.max(originalEstimatedWidth, 1);
     const estimatedNewWidth = translatedEstimatedWidth * scaleFactor;

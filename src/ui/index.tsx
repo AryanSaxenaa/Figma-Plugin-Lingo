@@ -18,6 +18,7 @@ interface TextNodeInfo {
     height: number;
     fontSize: number;
     parentName: string;
+    textAutoResize: "NONE" | "WIDTH_AND_HEIGHT" | "HEIGHT" | "TRUNCATE";
 }
 
 interface AuditResult {
@@ -152,7 +153,8 @@ function App(): React.ReactElement {
                     node.width,
                     node.height,
                     node.fontSize,
-                    locale
+                    locale,
+                    node.textAutoResize
                 );
 
                 const severity = getOverflowSeverity(overflow.overflowPercent);

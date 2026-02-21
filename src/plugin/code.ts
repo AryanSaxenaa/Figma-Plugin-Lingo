@@ -12,6 +12,7 @@ interface TextNodeInfo {
     height: number;
     fontSize: number;
     parentName: string;
+    textAutoResize: "NONE" | "WIDTH_AND_HEIGHT" | "HEIGHT" | "TRUNCATE";
 }
 
 interface AuditResult {
@@ -54,6 +55,7 @@ function walk(node: SceneNode, collector: TextNodeInfo[]): void {
             fontSize: typeof node.fontSize === "number" ? node.fontSize : 14,
             parentName:
                 node.parent && "name" in node.parent ? node.parent.name : "Page",
+            textAutoResize: node.textAutoResize,
         });
         return;
     }
