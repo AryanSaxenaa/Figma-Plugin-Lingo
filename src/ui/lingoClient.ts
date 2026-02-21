@@ -79,8 +79,7 @@ export async function translateBatch(
     });
 
     const lingoDotDev = new LingoDotDevEngine({
-        apiKey,
-        apiUrl: "https://api.lingo.dev"
+        apiKey
     });
 
     try {
