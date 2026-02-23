@@ -86,6 +86,8 @@ An unoptimized multi-page design file holds thousands of individual text frames.
 ## How to add LingoAudit to Figma
 https://youtu.be/PKaCsEORwnQ
 
+
+
 ## Usage Guide
 1. Obtain an API Key from the [Lingo.dev Dashboard](https://app.lingo.dev/settings/api).
 2. Start the `LingoAudit` plugin inside your Figma file.
@@ -97,6 +99,10 @@ https://youtu.be/PKaCsEORwnQ
 
 ## Demo
 https://youtu.be/Zj__-xJKxcc?si=Tsn-ncQ-z1QZ_DN2
+
+
+https://github.com/user-attachments/assets/079d4a09-530f-4e40-bb3b-ea2975f132d4
+
 
 
    
