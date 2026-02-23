@@ -37,6 +37,41 @@ graph TD
     C -->|Draws Overflow Highlights| F
 ```
 
+
+## Demo
+https://youtu.be/Zj__-xJKxcc?si=Tsn-ncQ-z1QZ_DN2
+
+
+https://github.com/user-attachments/assets/079d4a09-530f-4e40-bb3b-ea2975f132d4
+
+## How the Audit Works
+
+When you click **Scan for Overflows**, LingoAudit translates every text layer in your selected frame and checks whether the translated text still fits inside its original bounding box.
+
+For each text node, the plugin:
+1. Clones the node invisibly
+2. Injects the translated text into the clone
+3. Compares the clone's new dimensions against the original container size
+4. Calculates the **overflow percentage** — how much the translated text exceeds the boundary
+
+
+For example, if a text box is 40px tall but the German translation needs 52px, that is a **+30% overflow**.
+
+### Severity Levels
+
+| Severity | Condition | What It Means |
+|----------|-----------|---------------|
+| **Critical** | > 10% overflow | Text is significantly breaking out of its container. The layout will visibly break for users in this language. |
+| **Warning** | 0.1% – 10% overflow | Text slightly exceeds the boundary. May cause minor clipping or awkward wrapping depending on the platform. |
+| **Safe** | No overflow | The translated text fits within the original design boundaries. No layout issues expected. |
+
+### The Red Overflow Border
+
+Text nodes marked as **Critical** or **Warning** are outlined with a red border (stroke) directly on the cloned frame. This makes it easy to visually scan the translated screen and spot every problem area without opening the results panel.
+
+The original design is never modified — all highlights appear only on the generated translated copies.
+
+
 ## Advanced Technical Implementations
 
 The LingoAudit plugin has been rigorously engineered beyond a standard proof-of-concept to handle large, unoptimized layers of complex enterprise design files.
@@ -110,41 +145,3 @@ https://youtu.be/PKaCsEORwnQ
 5. Highlight a screen, frame, or object on your canvas.
 6. Click **Scan for Overflows**.
 7. Analyze the cloned screens and resulting UI panel for `Critical` and `Warning` constraints.
-
-## Demo
-https://youtu.be/Zj__-xJKxcc?si=Tsn-ncQ-z1QZ_DN2
-
-
-https://github.com/user-attachments/assets/079d4a09-530f-4e40-bb3b-ea2975f132d4
-
-## How the Audit Works
-
-When you click **Scan for Overflows**, LingoAudit translates every text layer in your selected frame and checks whether the translated text still fits inside its original bounding box.
-
-For each text node, the plugin:
-1. Clones the node invisibly
-2. Injects the translated text into the clone
-3. Compares the clone's new dimensions against the original container size
-4. Calculates the **overflow percentage** — how much the translated text exceeds the boundary
-
-
-For example, if a text box is 40px tall but the German translation needs 52px, that is a **+30% overflow**.
-
-### Severity Levels
-
-| Severity | Condition | What It Means |
-|----------|-----------|---------------|
-| **Critical** | > 10% overflow | Text is significantly breaking out of its container. The layout will visibly break for users in this language. |
-| **Warning** | 0.1% – 10% overflow | Text slightly exceeds the boundary. May cause minor clipping or awkward wrapping depending on the platform. |
-| **Safe** | No overflow | The translated text fits within the original design boundaries. No layout issues expected. |
-
-### The Red Overflow Border
-
-Text nodes marked as **Critical** or **Warning** are outlined with a red border (stroke) directly on the cloned frame. This makes it easy to visually scan the translated screen and spot every problem area without opening the results panel.
-
-The original design is never modified — all highlights appear only on the generated translated copies.
-
-
-
-
-   
