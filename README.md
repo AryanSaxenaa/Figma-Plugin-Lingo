@@ -96,6 +96,7 @@ https://youtu.be/PKaCsEORwnQ
 7. Analyze the cloned screens and resulting UI panel for `Critical` and `Warning` constraints.
 
 ## Demo
-https://youtu.be/Zj__-xJKxcc
+https://youtu.be/Zj__-xJKxcc?si=Tsn-ncQ-z1QZ_DN2
+
 
    
