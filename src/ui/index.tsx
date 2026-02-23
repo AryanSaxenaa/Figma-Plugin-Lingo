@@ -260,7 +260,7 @@ function App(): React.ReactElement {
         <div className="app">
             <header className="header">
                 <div className="header-title">LingoAudit</div>
-                <div className="header-subtitle">i18n Design Auditor</div>
+                <div className="header-subtitle">i18n Auditor</div>
             </header>
 
             <main className="main">
