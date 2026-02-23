@@ -2,13 +2,16 @@
 
 LingoAudit is a professional Figma Plugin designed to seamlessly test, translate, and audit application layouts for internationalization (i18n) workflows. Engineered to use the Lingo.dev API, it acts as a layout stress-tester, automatically discovering text bounds overflows in multiple target languages without destroying original design files.
 
+### STEP 1: Select the target language
 <img width="1919" height="1017" alt="image" src="https://github.com/user-attachments/assets/a6ec7068-0ded-493b-9374-dbab403068eb" />
+### STEP 2:  Select the frame you want to audit and click on scan for overflows
+<img width="1919" height="1018" alt="Screenshot 2026-02-23 192544" src="https://github.com/user-attachments/assets/ff1965e9-49a6-432e-bf5e-b0f0ec15bc48" />
+### STEP 3:  Review the categorized results (Critical / Warning / Safe) — overflowing text nodes are marked with red overflow stroke indicators on the cloned frames
+<img width="1919" height="1009" alt="Screenshot 2026-02-23 192607" src="https://github.com/user-attachments/assets/111361af-09d1-4481-ba51-ac489f22fef4" />
 
-<img width="1919" height="1018" alt="image" src="https://github.com/user-attachments/assets/a8651c8b-b5a4-4f47-83a0-6c060e98faf6" />
 
-<img width="1919" height="1009" alt="image" src="https://github.com/user-attachments/assets/388da9ec-56ab-4197-a4b6-09e6e3ca4e4f" />
-
-
+### You can also audit everything on your canvas with just a single click
+https://github.com/user-attachments/assets/76a1bda3-d562-4a23-ac9c-5bda8fc4f31a
 
 
 
