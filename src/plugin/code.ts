@@ -174,10 +174,11 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
                     overflowPercent = (overflowAmount / Math.max(item.height, 1)) * 100;
                     isOverflow = overflowAmount > 4;
                 } else {
-                    clone.textAutoResize = "WIDTH_AND_HEIGHT";
-                    // For fixed/truncated boxes, check if natural text width exceeds box width
-                    overflowAmount = clone.width - item.width;
-                    overflowPercent = (overflowAmount / Math.max(item.width, 1)) * 100;
+                    clone.resize(item.width, item.height);
+                    clone.textAutoResize = "HEIGHT";
+                    // For fixed boxes, keep width locked, let height grow, and see if it exceeds original fixed height
+                    overflowAmount = clone.height - item.height;
+                    overflowPercent = (overflowAmount / Math.max(item.height, 1)) * 100;
                     isOverflow = overflowAmount > 4;
                 }
 

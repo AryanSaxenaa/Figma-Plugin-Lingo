@@ -36,7 +36,7 @@ interface AuditResult {
 }
 
 type Step = "setup" | "scanning" | "results";
-type SeverityFilter = "all" | "warning" | "critical";
+type SeverityFilter = "all" | "warning" | "critical" | "safe";
 
 // ---------------------------------------------------------------------------
 // Helper: send a message to the Figma plugin sandbox
@@ -235,16 +235,16 @@ function App(): React.ReactElement {
     // Computed derived values
     // -------------------------------------------------------------------------
 
-    const overflowResults = results.filter((r) => r.isOverflow);
-
-    const filteredResults = overflowResults.filter((r) => {
+    const filteredResults = results.filter((r) => {
         const localeMatch = filterLocale === "all" || r.locale === filterLocale;
-        const severityMatch =
-            filterSeverity === "all" || r.severity === filterSeverity;
+        let severityMatch = false;
+        if (filterSeverity === "all") severityMatch = true;
+        else if (filterSeverity === "safe") severityMatch = !r.isOverflow;
+        else severityMatch = r.severity === filterSeverity;
         return localeMatch && severityMatch;
     });
 
-    const overflowCount = overflowResults.length;
+    const overflowCount = results.filter((r) => r.isOverflow).length;
     const criticalCount = results.filter((r) => r.severity === "critical").length;
     const safeCount = results.filter((r) => !r.isOverflow).length;
 
@@ -495,9 +495,10 @@ function ResultsView({
                         onFilterSeverityChange(e.target.value as SeverityFilter)
                     }
                 >
-                    <option value="all">All Severities</option>
+                    <option value="all">All Items</option>
                     <option value="critical">Critical only</option>
                     <option value="warning">Warning only</option>
+                    <option value="safe">Safe only</option>
                 </select>
             </div>
 
@@ -543,12 +544,16 @@ function ResultCard({ result, onClick }: ResultCardProps): React.ReactElement {
     const severityClass =
         result.severity === "critical"
             ? "result-card--critical"
-            : "result-card--warning";
+            : result.severity === "warning"
+                ? "result-card--warning"
+                : "result-card--safe";
 
     const badgeClass =
         result.severity === "critical"
             ? "severity-badge--critical"
-            : "severity-badge--warning";
+            : result.severity === "warning"
+                ? "severity-badge--warning"
+                : "severity-badge--safe";
 
     const pct = Math.min(Math.abs(result.overflowPercent), 100);
 
@@ -564,7 +569,7 @@ function ResultCard({ result, onClick }: ResultCardProps): React.ReactElement {
                 <span className="result-card__locale">{displayName}</span>
                 <span className="result-card__badges">
                     <span className={`severity-badge ${badgeClass}`}>
-                        {result.severity === "critical" ? "Critical" : "Warning"}
+                        {result.severity === "critical" ? "Critical" : result.severity === "warning" ? "Warning" : "Safe"}
                     </span>
                     {result.isRTL && <span className="rtl-badge">RTL</span>}
                 </span>
@@ -585,15 +590,17 @@ function ResultCard({ result, onClick }: ResultCardProps): React.ReactElement {
                 </span>
             </div>
 
-            <div className="overflow-bar-wrap">
-                <div className="overflow-bar">
-                    <div
-                        className={`overflow-fill ${result.severity === "critical" ? "overflow-fill--critical" : "overflow-fill--warning"}`}
-                        style={{ width: `${pct}%` }}
-                    />
+            {result.isOverflow && (
+                <div className="overflow-bar-wrap">
+                    <div className="overflow-bar">
+                        <div
+                            className={`overflow-fill ${result.severity === "critical" ? "overflow-fill--critical" : "overflow-fill--warning"}`}
+                            style={{ width: `${pct}%` }}
+                        />
+                    </div>
+                    <span className="overflow-label">+{result.overflowPercent.toFixed(1)}% overflow</span>
                 </div>
-                <span className="overflow-label">+{result.overflowPercent.toFixed(1)}% overflow</span>
-            </div>
+            )}
 
             <div className="result-card__hint">Click to select in Figma</div>
         </div>

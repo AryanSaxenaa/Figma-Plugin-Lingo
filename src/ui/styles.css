@@ -624,6 +624,11 @@ a:hover {
   background: rgba(255, 153, 68, 0.03);
 }
 
+.result-card--safe {
+  border-left-color: var(--safe);
+  background: var(--safe-bg);
+}
+
 .result-card__header {
   display: flex;
   align-items: center;
@@ -661,6 +666,12 @@ a:hover {
   background: var(--warning-bg);
   color: var(--warning);
   border: 1px solid var(--warning-border);
+}
+
+.severity-badge--safe {
+  background: var(--safe-bg);
+  color: var(--safe);
+  border: 1px solid var(--safe-border);
 }
 
 .result-card__path {
