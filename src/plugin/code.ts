@@ -293,6 +293,8 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
                 body: init?.body,
             };
 
+            console.log("SANDBOX FETCH INIT:", url, init?.method, "body is Uint8Array?", init?.body instanceof Uint8Array);
+
             const resp = await fetch(url, fetchOptions);
             const text = await resp.text();
 
@@ -303,6 +305,7 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
                 text,
             });
         } catch (e: any) {
+            console.error("SANDBOX FETCH CRASH:", e);
             figma.ui.postMessage({
                 type: "PLUGIN_FETCH_ERROR",
                 id,
