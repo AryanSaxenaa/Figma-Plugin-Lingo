@@ -4,8 +4,10 @@ LingoAudit is a professional Figma Plugin designed to seamlessly test, translate
 
 ### STEP 1: Select the target language
 <img width="1919" height="1017" alt="image" src="https://github.com/user-attachments/assets/a6ec7068-0ded-493b-9374-dbab403068eb" />
+
 ### STEP 2:  Select the frame you want to audit and click on scan for overflows
 <img width="1919" height="1018" alt="Screenshot 2026-02-23 192544" src="https://github.com/user-attachments/assets/ff1965e9-49a6-432e-bf5e-b0f0ec15bc48" />
+
 ### STEP 3:  Review the categorized results (Critical / Warning / Safe) — overflowing text nodes are marked with red overflow stroke indicators on the cloned frames
 <img width="1919" height="1009" alt="Screenshot 2026-02-23 192607" src="https://github.com/user-attachments/assets/111361af-09d1-4481-ba51-ac489f22fef4" />
 
@@ -114,6 +116,34 @@ https://youtu.be/Zj__-xJKxcc?si=Tsn-ncQ-z1QZ_DN2
 
 
 https://github.com/user-attachments/assets/079d4a09-530f-4e40-bb3b-ea2975f132d4
+
+## How the Audit Works
+
+When you click **Scan for Overflows**, LingoAudit translates every text layer in your selected frame and checks whether the translated text still fits inside its original bounding box.
+
+For each text node, the plugin:
+1. Clones the node invisibly
+2. Injects the translated text into the clone
+3. Compares the clone's new dimensions against the original container size
+4. Calculates the **overflow percentage** — how much the translated text exceeds the boundary
+
+
+For example, if a text box is 40px tall but the German translation needs 52px, that is a **+30% overflow**.
+
+### Severity Levels
+
+| Severity | Condition | What It Means |
+|----------|-----------|---------------|
+| **Critical** | > 10% overflow | Text is significantly breaking out of its container. The layout will visibly break for users in this language. |
+| **Warning** | 0.1% – 10% overflow | Text slightly exceeds the boundary. May cause minor clipping or awkward wrapping depending on the platform. |
+| **Safe** | No overflow | The translated text fits within the original design boundaries. No layout issues expected. |
+
+### The Red Overflow Border
+
+Text nodes marked as **Critical** or **Warning** are outlined with a red border (stroke) directly on the cloned frame. This makes it easy to visually scan the translated screen and spot every problem area without opening the results panel.
+
+The original design is never modified — all highlights appear only on the generated translated copies.
+
 
 
 
