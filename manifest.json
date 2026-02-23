@@ -11,6 +11,7 @@
     "allowedDomains": [
       "https://api.lingo.dev",
       "https://engine.lingo.dev",
+      "https://cors.eu.org",
       "https://*.lingo.dev"
     ]
   }
