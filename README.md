@@ -1,80 +1,72 @@
-# LingoAudit — i18n Design Auditor
+# LingoAudit - Figma i18n Design Auditor
 
-A Figma plugin that catches i18n text overflow problems before any code is written.
+LingoAudit is a professional Figma Plugin designed to seamlessly test, translate, and audit application layouts for internationalization (i18n) workflows. Engineered to use the Lingo.dev API, it acts as a layout stress-tester, automatically discovering text bounds overflows in multiple target languages without destroying original design files.
 
-Designers mock up UIs in English. When developers translate them to German, Japanese, or Arabic,
-text overflows buttons, breaks layouts, and RTL languages flip the entire UI. LingoAudit
-catches those issues inside Figma in real-time using the Lingo.dev translation API.
+## Architecture & Workflow
 
-## Prerequisites
+The plugin architecture resolves complex Figma Sandbox limitations and ensures non-destructive, high-performance design injection. 
 
-- Node.js 18+
-- npm 9+
-- A [Lingo.dev](https://app.lingo.dev) account with an API key
-
-## Project Structure
-
-```
-lingo-audit-figma/
-├── manifest.json          Figma plugin manifest
-├── package.json
-├── tsconfig.json          Root configs referencing isolated UI/Plugin configs
-├── webpack.config.js      Webpack config building UI + Plugin separately
-└── src/
-    ├── plugin/
-    │   └── code.ts        Figma sandbox side — executes API, layout checks, ghost rendering
-    └── ui/
-        ├── index.html     HTML shell (Webpack inlines JS + CSS into this)
-        ├── index.tsx      React 18 application entry
-        ├── styles.css     Dark theme, vanilla CSS
-        ├── lingoClient.ts Lingo.dev REST API wrapper
-        └── overflowDetector.ts  Mathematical bounding utility
+```mermaid
+graph TD
+    A[Figma Designer] -->|Selects Frame & Clicks Scan| B[Figma Plugin UI Iframe - React]
+    B <-->|postMessage: Discovers Nodes| C[Figma Sandbox Context]
+    B -->|Splits Translation & Batches| D[Translation Relay]
+    D -->|Bypasses Figma CORS| E[Lingo.dev Engine]
+    E -->|Returns Translated Content| D
+    D -->|Updates Progress State| B
+    B -->|Passes Translated Strings| C
+    C -->|Clones Target Frames| F[Localized Cloned Frames]
+    C -->|Metrics Pre-calculation| F
+    C -->|Concurrent Promise.all Font Load| F
+    C -->|figma.mixed Typographic Preservation| F
+    C -->|Draws Overflow Highlights| F
 ```
 
-## Setup
+## Advanced Technical Implementations
 
-```bash
-npm install
-npm run build
-```
+The LingoAudit plugin has been rigorously engineered beyond a standard proof-of-concept to handle large, unoptimized layers of complex enterprise design files.
 
-## Loading in Figma
+### 1. True Design Cloning
+Instead of altering the original source of truth, LingoAudit duplicates the selected screen(s) for each requested locale. It places them sequentially adjacent to the original asset, permitting designers to view localized iterations in a flawless side-by-side array. 
 
-1. Open Figma Desktop.
-2. Go to **Plugins > Development > Import plugin from manifest...**.
-3. Select the `manifest.json` file from this directory.
-4. Run via **Plugins > Development > LingoAudit**.
+### 2. High-Capacity Chunking Architecture
+To prevent `413 Payload Too Large` responses or engine timeouts when scanning 1,000+ text nodes, the translation mechanism partitions the requests into chunks (batch sizes of 50). This stream buffers to the UI, providing the user with real-time translation completion tracking.
 
-## Usage
+### 3. figma.mixed Typographical Preservation
+When Figma encounters a text node holding multiple weights, sizes, or colors, it aggregates them as `figma.mixed`. Direct string replacement instantly annihilates formatting. LingoAudit extracts a character-by-character style multi-dimensional map of the node, calculates length proportions, and rebuilds the geometric styles alongside the translated text injections to preserve visual hierarchies.
 
-1. Enter your Lingo.dev API key (get one at https://app.lingo.dev/settings/api). Once entered, it will be securely saved across sessions using local client storage.
-2. Select the target locales you want to audit.
-3. Optionally select a frame — otherwise the entire page is scanned.
-4. Click **Scan for Overflows**.
-5. Overflow nodes are highlighted red on the canvas.
-6. Use the filter dropdowns to narrow results by locale or severity.
-7. Click any result card to jump to that node in Figma.
-8. Click **Reset and Rescan** to clear highlights and safely restore original layer strokes/styles.
+### 4. Concurrent Font Loading & Recovery
+Figma inherently demands asynchronous local font loading prior to character injection. 
+- **Promise.all Concurrent Loading**: The plugin sequentially scrapes the environment for required typography and mass-loads the dependencies concurrently prior to generating clones, eliminating sequential synchronous bottlenecks.
+- **Graceful Degradation**: If an uninstalled third-party font triggers a rejection within the environment, LingoAudit safely traps the error, falls back to `Inter-Regular`, and proceeds with layout translations rather than fatally crashing.
 
-## Development Watch Mode
+### 5. Algorithmic Overflow Constraints
+The internal sandbox measures the `textAutoResize` properties of every node. Truncated fields calculate lateral pixel displacement (Width constraints) whereas flowing paragraphs calculate downward pixel expansion against standard constraints.
+- **Critical Overflow**: > 10% bounds exceeded.
+- **Warning Overflow**: 0.1% to 10% bounds exceeded.
+- **Safe**: Confined effortlessly inside limits.
 
-```bash
-npm run dev
-```
+## Installation & Setup
 
-Webpack will watch for changes. Reload the plugin in Figma to pick them up.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/AryanSaxenaa/Figma-Plugin-Lingo.git
+   ```
+2. **Install dependencies and compile:**
+   ```bash
+   npm install
+   npm run build
+   ```
+3. **Load in Figma:**
+   - Open the Figma Desktop App.
+   - Go to `Plugins > Manage Plugins > Development > Import plugin from manifest...`
+   - Select the `manifest.json` file in this repository.
 
-## Architecture & Technical Notes
-
-- **Figma Sandbox Boundaries**: `src/plugin/code.ts` runs in Figma's sandboxed JS runtime. It has access to the Figma API but has no fetch, no DOM, no browser APIs. All external network calls via Lingo.dev happen asynchronously in the UI iframe.
-- **Inlined Assets**: The build produces a **single self-contained `dist/ui.html`** using a custom Webpack hook that automatically rips and embeds scripts. Figma loads plugin UIs from disk and cannot resolve relative file references.
-- **Ghost Rendering & Pixel-Perfect Overflows**: Instead of guessing text bounding boxes heavily using math characteristics, the sandbox physically clones text nodes via Ghost Rendering, swaps translations into them utilizing Figma's native multi-threading fonts loader, and checks exact dimension overflows to provide 100% pixel-perfect accuracy.
-- **Parent Layout Constraints**: Detects constraint limitations of text nodes bound inside Auto Layout frames alongside respecting `textAutoResize` scaling restrictions, so infinite-width expansions without layout breaks aren't wrongly flagged.
-- **Client Storage**: The user API key is securely encrypted inside Figma's local `clientStorage` ensuring seamless reuse without needing manual keystroke rebinding every session.
-- **Safe State Reversions**: LingoAudit caches original layout properties including `strokes`, `strokeWeight`, and `strokeAlign` via `PluginData` payloads globally, to avoid data loss on text layers when highlights are cleared.
-
-## Supported Locales
-
-German, French, Japanese, Arabic (RTL), Spanish, Portuguese, Hindi, Russian, Korean, Chinese.
-
-RTL locales (Arabic, Hebrew, Farsi, Urdu, Yiddish) automatically receive an RTL badge and the translated text is rendered right-to-left dynamically inside the interface result cards.
+## Usage Guide
+1. Obtain an API Key from the [Lingo.dev Dashboard](https://app.lingo.dev/settings/api).
+2. Start the `LingoAudit` plugin inside your Figma file.
+3. Supply your API Key.
+4. Select one or more target locales in the interface (e.g., German, Japanese).
+5. Highlight a screen, frame, or object on your canvas.
+6. Click **Scan for Overflows**.
+7. Analyze the cloned screens and resulting UI panel for `Critical` and `Warning` constraints.
