@@ -41,6 +41,20 @@ figma.clientStorage.getAsync("apiKey").then((apiKey) => {
     }
 });
 
+let lastScannedRootIds: string[] = [];
+
+function walkTextNodes(node: SceneNode, collector: TextNode[]): void {
+    if (node.type === "TEXT") {
+        collector.push(node);
+        return;
+    }
+    if ("children" in node) {
+        for (const child of node.children) {
+            walkTextNodes(child, collector);
+        }
+    }
+}
+
 // Recursively collect all TEXT nodes from the given node tree.
 function walk(node: SceneNode, collector: TextNodeInfo[]): void {
     if (node.type === "TEXT") {
@@ -201,6 +215,8 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
                 ? figma.currentPage.selection
                 : figma.currentPage.children;
 
+        lastScannedRootIds = roots.map((r) => r.id);
+
         const nodes: TextNodeInfo[] = [];
         for (const root of roots) {
             walk(root, nodes);
@@ -218,51 +234,110 @@ figma.ui.onmessage = async (msg: { type: string;[key: string]: unknown }) => {
         let overflowCount = 0;
         const localeSet = new Set<string>();
 
-        for (const result of results) {
-            if (!result.isOverflow) continue;
+        const byLocale: Record<string, AuditResult[]> = {};
+        for (const res of results) {
+            if (!byLocale[res.locale]) byLocale[res.locale] = [];
+            byLocale[res.locale].push(res);
+        }
 
-            const node = figma.getNodeById(result.nodeId);
-            if (!node || !("strokes" in node)) continue;
+        const rootNodes = lastScannedRootIds
+            .map((id) => figma.getNodeById(id))
+            .filter((n) => n) as SceneNode[];
 
-            const strokeable = node as GeometryMixin & SceneNode & BaseNode;
-            node.setPluginData(
-                "originalStrokes",
-                JSON.stringify(strokeable.strokes)
-            );
+        let totalRootWidth = 0;
+        for (const r of rootNodes) {
+            if ("width" in r) totalRootWidth += r.width + 100;
+            else totalRootWidth += 1000;
+        }
+        if (totalRootWidth === 0) totalRootWidth = 1000;
 
-            const extendedStrokeable = strokeable as unknown as IndividualStrokesMixin & {
-                strokeWeight: number;
-                strokeAlign: string;
-            };
+        let xOffset = 0;
+        const newClones: SceneNode[] = [];
 
-            node.setPluginData("originalStrokeWeight", extendedStrokeable.strokeWeight?.toString() ?? "");
-            node.setPluginData("originalStrokeAlign", extendedStrokeable.strokeAlign ?? "");
-            node.setPluginData("lingoAuditHighlighted", "true");
+        for (const locale of Object.keys(byLocale)) {
+            const localeResults = byLocale[locale];
+            xOffset += totalRootWidth;
+            localeSet.add(locale);
 
-            strokeable.strokes = [
-                {
-                    type: "SOLID",
-                    color: { r: 1, g: 0.2, b: 0.2 },
-                    opacity: 1,
-                },
-            ];
+            const resultMap = new Map<string, AuditResult>();
+            for (const r of localeResults) resultMap.set(r.nodeId, r);
 
-            (strokeable as unknown as IndividualStrokesMixin & {
-                strokeWeight: number;
-                strokeAlign: string;
-            }).strokeWeight = 2;
+            for (const root of rootNodes) {
+                const clone = root.clone();
+                newClones.push(clone);
 
-            (strokeable as unknown as IndividualStrokesMixin & {
-                strokeAlign: string;
-            }).strokeAlign = "OUTSIDE";
+                if ("x" in clone) {
+                    clone.x += xOffset;
+                }
 
-            overflowCount++;
-            localeSet.add(result.locale);
+                clone.name = `${root.name} - ${locale.toUpperCase()}`;
+
+                const origTexts: TextNode[] = [];
+                walkTextNodes(root, origTexts);
+
+                const cloneTexts: TextNode[] = [];
+                walkTextNodes(clone, cloneTexts);
+
+                for (let i = 0; i < origTexts.length; i++) {
+                    const origId = origTexts[i].id;
+                    const res = resultMap.get(origId);
+
+                    if (res) {
+                        const cloneText = cloneTexts[i];
+
+                        let fontToLoad = cloneText.fontName;
+                        if (fontToLoad === figma.mixed) {
+                            fontToLoad = { family: "Inter", style: "Regular" };
+                        }
+
+                        try {
+                            await figma.loadFontAsync(fontToLoad as FontName);
+                            if (cloneText.fontName === figma.mixed) {
+                                cloneText.fontName = fontToLoad;
+                            }
+                            cloneText.characters = res.translatedText;
+                        } catch (e) {
+                            // Missing font, skip character replacement
+                        }
+
+                        if (res.isOverflow) {
+                            overflowCount++;
+                            cloneText.setPluginData("lingoAuditHighlighted", "true");
+                            const strokeable = cloneText as GeometryMixin & BaseNode & SceneNode;
+                            cloneText.setPluginData("originalStrokes", JSON.stringify(strokeable.strokes));
+
+                            const extendedStrokeable = strokeable as unknown as IndividualStrokesMixin & {
+                                strokeWeight: number;
+                                strokeAlign: string;
+                            };
+
+                            cloneText.setPluginData("originalStrokeWeight", extendedStrokeable.strokeWeight?.toString() ?? "");
+                            cloneText.setPluginData("originalStrokeAlign", extendedStrokeable.strokeAlign ?? "");
+
+                            strokeable.strokes = [
+                                {
+                                    type: "SOLID",
+                                    color: { r: 1, g: 0.2, b: 0.2 },
+                                    opacity: 1,
+                                },
+                            ];
+                            extendedStrokeable.strokeWeight = 2;
+                            extendedStrokeable.strokeAlign = "OUTSIDE";
+                        }
+                    }
+                }
+            }
         }
 
         figma.notify(
-            `${overflowCount} overflow(s) found across ${localeSet.size} locale(s)`
+            `${overflowCount} overflow(s) highlighted across ${localeSet.size} copied screen(s)!`
         );
+
+        if (newClones.length > 0) {
+            figma.currentPage.selection = newClones;
+            figma.viewport.scrollAndZoomIntoView(newClones);
+        }
+
         return;
     }
 
