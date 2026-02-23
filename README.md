@@ -2,6 +2,11 @@
 
 LingoAudit is a professional Figma Plugin designed to seamlessly test, translate, and audit application layouts for internationalization (i18n) workflows. Engineered to use the Lingo.dev API, it acts as a layout stress-tester, automatically discovering text bounds overflows in multiple target languages without destroying original design files.
 
+<img width="1919" height="1015" alt="image" src="https://github.com/user-attachments/assets/a2581f67-de56-4082-ae2e-a31114d81171" />
+
+<img width="1919" height="1015" alt="image" src="https://github.com/user-attachments/assets/c9052b52-dcfc-451f-8d00-9dcb1b624945" />
+
+
 
 ## Architecture & Workflow
 
