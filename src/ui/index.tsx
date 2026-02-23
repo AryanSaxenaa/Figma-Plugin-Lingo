@@ -89,10 +89,11 @@ function App(): React.ReactElement {
     const [step, setStep] = useState<Step>("setup");
     const [results, setResults] = useState<AuditResult[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [progress, setProgress] = useState<{ current: number; total: number; locale: string }>({
+    const [progress, setProgress] = useState<{ current: number; total: number; locale: string; pct: number }>({
         current: 0,
         total: 0,
         locale: "",
+        pct: 0,
     });
     const [filterLocale, setFilterLocale] = useState<string>("all");
     const [filterSeverity, setFilterSeverity] = useState<SeverityFilter>("all");
@@ -163,12 +164,15 @@ function App(): React.ReactElement {
                 current: i + 1,
                 total: selectedLocales.length,
                 locale: localeInfo ? `${localeInfo.flag} ${localeInfo.label}` : locale,
+                pct: 0,
             });
 
             let translations: string[];
 
             try {
-                translations = await translateBatch(apiKey, texts, "en", locale);
+                translations = await translateBatch(apiKey, texts, "en", locale, (p) => {
+                    setProgress((prev) => ({ ...prev, pct: p }));
+                });
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Translation failed.");
                 setStep("setup");
@@ -276,6 +280,7 @@ function App(): React.ReactElement {
                         current={progress.current}
                         total={progress.total}
                         locale={progress.locale}
+                        pct={progress.pct}
                     />
                 )}
 
@@ -402,10 +407,11 @@ interface ScanningViewProps {
     current: number;
     total: number;
     locale: string;
+    pct?: number;
 }
 
-function ScanningView({ current, total, locale }: ScanningViewProps): React.ReactElement {
-    const pct = total > 0 ? (current / total) * 100 : 0;
+function ScanningView({ current, total, locale, pct = 0 }: ScanningViewProps): React.ReactElement {
+    const overallPct = total > 0 ? (((current - 1) + (pct / 100)) / total) * 100 : 0;
 
     return (
         <div className="scanning-view">
@@ -415,7 +421,7 @@ function ScanningView({ current, total, locale }: ScanningViewProps): React.Reac
             </p>
             <p className="scanning-locale">{locale}</p>
             <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${pct}%` }} />
+                <div className="progress-fill" style={{ width: `${overallPct}%` }} />
             </div>
         </div>
     );

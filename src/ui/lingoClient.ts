@@ -21,29 +21,42 @@ export async function translateBatch(
     apiKey: string,
     texts: string[],
     source: string = "en",
-    target: string
+    target: string,
+    onProgress?: (progress: number) => void
 ): Promise<string[]> {
-    const content: Record<string, string> = {};
-    texts.forEach((text, index) => {
-        content[`str_${index}`] = text;
-    });
-
     const lingoDotDev = new LingoDotDevEngine({
         apiKey,
         apiUrl: "https://cors.eu.org/https://engine.lingo.dev"
     });
 
-    try {
-        const translatedContent = await lingoDotDev.localizeObject(content, {
-            sourceLocale: source,
-            targetLocale: target,
+    const CHUNK_SIZE = 50;
+    const finalTranslations: string[] = new Array(texts.length).fill("");
+
+    for (let i = 0; i < texts.length; i += CHUNK_SIZE) {
+        const chunk = texts.slice(i, i + CHUNK_SIZE);
+        const content: Record<string, string> = {};
+        chunk.forEach((text, index) => {
+            content[`str_${index}`] = text;
         });
 
-        return texts.map((_, index) => {
-            const key = `str_${index}`;
-            return (translatedContent as Record<string, string>)[key] ?? texts[index];
-        });
-    } catch (err: any) {
-        throw new Error(`DEBUG SDK: ${err.message || err} | STACK: ${err.stack || "No Stack"}`);
+        try {
+            const translatedContent = await lingoDotDev.localizeObject(content, {
+                sourceLocale: source,
+                targetLocale: target,
+            });
+
+            chunk.forEach((text, index) => {
+                const key = `str_${index}`;
+                finalTranslations[i + index] = (translatedContent as Record<string, string>)[key] ?? text;
+            });
+        } catch (err: any) {
+            throw new Error(`DEBUG SDK: ${err.message || err} | STACK: ${err.stack || "No Stack"}`);
+        }
+
+        if (onProgress) {
+            onProgress(Math.min(((i + chunk.length) / texts.length) * 100, 100));
+        }
     }
+
+    return finalTranslations;
 }
