@@ -46,6 +46,25 @@ The internal sandbox measures the `textAutoResize` properties of every node. Tru
 - **Warning Overflow**: 0.1% to 10% bounds exceeded.
 - **Safe**: Confined effortlessly inside limits.
 
+## Engineering Challenges & Figma Sandbox Limitations
+
+Developing within Figma's plugin ecosystem presented several strict environmental limitations that required unique architectural workarounds to create a production-ready tool.
+
+### 1. The Sandbox Network Void (CORS & Missing APIs)
+Figma's core execution environment (`code.ts`) evaluates within a highly restrictive Realm sandbox. It completely lacks a DOM, the `window` object, and the `fetch` API. Network requests must be routed through the UI iframe via `postMessage`. However, the UI iframe is constrained by strict browser CORS policies. When communicating with the proprietary `Lingo.dev` APIs utilizing custom `Authorization` headers, standard requests were blocked. We engineered a seamless proxy relay methodology via `cors.eu.org` that safely permitted pre-flight `OPTIONS` and secured headers through the iframe wall without needing a heavy, standalone Node.js backend proxy.
+
+### 2. `figma.mixed` Typographical Annihilation
+When a designer crafts a single text block featuring varied font weights or colors (e.g., "Welcome to **Lingo**"), Figma categorizes the font array as an unreadable `figma.mixed` object. Injecting a localized translation strings blindly into this block destroys all formatting, reverting to a uniform system font. We tackled this by engineering an algorithmic style-mapper (`applyTextWithMixedStyles`). It measures the exact geometric indices of the original fonts and sizes, mathematically interpolates their boundary scale to match the length of the new localized string, and injects the translated characters while perfectly repainting the proportional inline formatting.
+
+### 3. Synchronous Asset Loading Bottlenecks
+Figma prohibits text manipulation until the exact required font has been injected into the document via `await figma.loadFontAsync()`. Iterating synchronously over 500 text nodes using 8 different web fonts caused massive pipeline freezing. We overcame this by implementing a pre-computation pass that scans the entire document tree, isolates a `Set` of unique required fonts, and mass-loads them concurrently via `Promise.all()` prior to generating the translations, converting a slow, linear task into a near-instantaneous bulk operation.
+
+### 4. Bounding Box False Overflows
+Figma natively measures bounding text boxes with rigid constraints (e.g., `textAutoResize = "NONE"`). Pushing extended translation strings (like German) into these fixed boxes would initially force the text to unwrap into an infinite single line, leading to wildly inaccurate "overflow" calculations. We fixed this by selectively anchoring the X-coordinate width constraint of fixed boxes and temporarily evaluating their vertical growth metrics (`clone.textAutoResize = "HEIGHT"`), allowing the physics engine to accurately simulate how much the text would bleed out of the bottom of its rigid container.
+
+### 5. Infinite Payload Traps
+An unoptimized multi-page design file holds thousands of individual text frames. Funneling this entire payload to an external AI API at once resulted in `413 Payload Too Large` responses and engine timeout loops. We implemented an aggressive array chunking utility within the React environment that parcels data streams into strict batches of 50 strings, resolving the payload limit while simultaneously driving a live-updating UI progress simulation.
+
 ## Installation & Setup
 
 1. **Clone the repository:**
