@@ -12,7 +12,9 @@
       "https://api.lingo.dev",
       "https://engine.lingo.dev",
       "https://cors.eu.org",
-      "https://*.lingo.dev"
+      "https://*.lingo.dev",
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com"
     ]
   }
 }
