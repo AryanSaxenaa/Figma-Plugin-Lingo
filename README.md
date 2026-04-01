@@ -61,8 +61,8 @@ For example, if a text box is 40px tall but the German translation needs 52px, t
 
 | Severity | Condition | What It Means |
 |----------|-----------|---------------|
-| **Critical** | > 10% overflow | Text is significantly breaking out of its container. The layout will visibly break for users in this language. |
-| **Warning** | 0.1% – 10% overflow | Text slightly exceeds the boundary. May cause minor clipping or awkward wrapping depending on the platform. |
+| **Critical** | > 20% overflow | Text is significantly breaking out of its container. The layout will visibly break for users in this language. |
+| **Warning** | > 0% to 20% overflow | Text slightly exceeds the boundary. May cause minor clipping or awkward wrapping depending on the platform. |
 | **Safe** | No overflow | The translated text fits within the original design boundaries. No layout issues expected. |
 
 ### The Red Overflow Border
@@ -92,8 +92,8 @@ Figma inherently demands asynchronous local font loading prior to character inje
 
 ### 5. Algorithmic Overflow Constraints
 The internal sandbox measures the `textAutoResize` properties of every node. Truncated fields calculate lateral pixel displacement (Width constraints) whereas flowing paragraphs calculate downward pixel expansion against standard constraints.
-- **Critical Overflow**: > 10% bounds exceeded.
-- **Warning Overflow**: 0.1% to 10% bounds exceeded.
+- **Critical Overflow**: > 20% bounds exceeded.
+- **Warning Overflow**: > 0% to 20% bounds exceeded.
 - **Safe**: Confined effortlessly inside limits.
 
 ## Engineering Challenges & Figma Sandbox Limitations
