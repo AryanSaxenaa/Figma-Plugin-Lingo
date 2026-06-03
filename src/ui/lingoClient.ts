@@ -26,7 +26,9 @@ export async function translateBatch(
 ): Promise<string[]> {
     const lingoDotDev = new LingoDotDevEngine({
         apiKey,
-        apiUrl: "https://cors.eu.org/https://engine.lingo.dev"
+        // Call Lingo directly — allowed in manifest.json. The cors.eu.org relay
+        // used to work around browser CORS but now returns 403 and breaks fetch.
+        apiUrl: "https://engine.lingo.dev",
     });
 
     const CHUNK_SIZE = 50;
@@ -49,8 +51,22 @@ export async function translateBatch(
                 const key = `str_${index}`;
                 finalTranslations[i + index] = (translatedContent as Record<string, string>)[key] ?? text;
             });
-        } catch (err: any) {
-            throw new Error(`DEBUG SDK: ${err.message || err} | STACK: ${err.stack || "No Stack"}`);
+        } catch (err: unknown) {
+            const raw = err instanceof Error ? err.message : String(err);
+            let parsed: { _tag?: string; message?: string } | null = null;
+            try {
+                parsed = JSON.parse(raw) as { _tag?: string; message?: string };
+            } catch {
+                /* not JSON */
+            }
+            if (parsed?._tag === "ForbiddenError" && parsed.message?.includes("enabled engines")) {
+                throw new Error(
+                    "Your Lingo.dev account has no active localization engine. " +
+                        "Open https://lingo.dev → Platform → Localization Engines, create or re-enable an engine, " +
+                        "then use an API key from that same organization."
+                );
+            }
+            throw new Error(raw || "Translation request failed.");
         }
 
         if (onProgress) {
